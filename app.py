@@ -17,7 +17,6 @@ import json
 from firebase_admin import credentials, db as admin_db, auth as admin_auth
 import firebase_admin
 import logging
-from dotenv import load_dotenv
 
 # Configure logging
 logging.basicConfig(
@@ -31,8 +30,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
