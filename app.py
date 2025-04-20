@@ -47,23 +47,32 @@ firebase_config = {
     "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID")
 }
 
-# Initialize Firebase Admin SDK
+
 if not firebase_admin._apps:
-    # Create credentials dictionary from environment variables
-    cred_dict = {
-        "type": "service_account",
-        "project_id": os.getenv("FIREBASE_PROJECT_ID"),
-        "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
-        "private_key": os.getenv("FIREBASE_PRIVATE_KEY", "").replace("\\n", "\n"),
-        "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
-        "client_id": os.getenv("FIREBASE_CLIENT_ID", ""),
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
-    }
-    
     try:
+        # Format private key correctly
+        private_key = os.getenv("FIREBASE_PRIVATE_KEY", "")
+        if private_key.startswith('"') and private_key.endswith('"'):
+            private_key = private_key[1:-1]  # Remove surrounding quotes if present
+        private_key = private_key.replace('\\n', '\n')  # Replace literal \n with newlines
+
+        cred_dict = {
+            "type": "service_account",
+            "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+            "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+            "private_key": private_key,
+            "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+            "client_id": os.getenv("FIREBASE_CLIENT_ID", ""),
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL")
+        }
+
+        # Add debug logging
+        logger.debug(f"Project ID: {cred_dict['project_id']}")
+        logger.debug(f"Client Email: {cred_dict['client_email']}")
+        
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred, {
             'databaseURL': os.getenv('FIREBASE_DATABASE_URL')
@@ -71,10 +80,17 @@ if not firebase_admin._apps:
         logger.info("Firebase Admin SDK initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize Firebase Admin SDK: {str(e)}")
+        # Print more detailed error information
+        import traceback
+        logger.error(traceback.format_exc())
         raise
+
+# Initialize Pyrebase
 firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 db = firebase.database()
+
+
 def save_user_data(user_id, email, username):
     """Save user data with improved error handling"""
     try:
